@@ -21,7 +21,14 @@ substitutions:
 
 steps:
   - name: "gcr.io/cloud-builders/docker"
+    id: build
     args: ["build", "-f", "docker/Dockerfile", "-t", "${_IMAGE}:${_TAG}", "."]
+  # Gate: run the synthetic inference self-test in the built image. If it fails,
+  # the build fails and the image is NOT pushed.
+  - name: "${_IMAGE}:${_TAG}"
+    id: smoke-test
+    entrypoint: "Rscript"
+    args: ["/tests/smoke_test.R"]
 
 images:
   - "${_IMAGE}:${_TAG}"

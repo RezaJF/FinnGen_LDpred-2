@@ -53,6 +53,7 @@ option_list <- list(
   make_option("--n_eff",      type = "double",    default = NA,   help = "constant effective N (if --n_col absent)"),
   make_option("--info_thr",   type = "double",    default = 0.7),
   make_option("--sd_qc",      type = "double",    default = 0.10),
+  make_option("--h2_init",    type = "double",    default = NA, help = "override the LDSC h2 seed (use when LDSC is unreliable, e.g. few variants)"),
   make_option("--n_chains",   type = "integer",   default = 30L),
   make_option("--burn_in",    type = "integer",   default = 500L),
   make_option("--num_iter",   type = "integer",   default = 500L),
@@ -158,6 +159,9 @@ ldsc <- snp_ldsc(ld_score = ld_keep, ld_size = n_ref_total, chi2 = chi2,
 h2_est <- ldsc[["h2"]]
 log_msg("LDSC h2 = %.4f (intercept %.3f)", h2_est, ldsc[["int"]])
 if (!is.finite(h2_est) || h2_est <= 0) { log_msg("h2 non-positive/NA -> fallback 0.1"); h2_est <- 0.1 }
+if (is.finite(opt$h2_init) && opt$h2_init > 0) {
+  log_msg("using provided --h2_init %.4f (overriding LDSC %.4f)", opt$h2_init, h2_est); h2_est <- opt$h2_init
+}
 
 ## ---- 6. LDpred2-auto ----------------------------------------------------
 set.seed(1)

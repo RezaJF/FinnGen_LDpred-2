@@ -57,6 +57,7 @@ RUN R -e "options(repos = c(CRAN = 'https://packagemanager.posit.co/cran/2024-01
 
 # Bake all pipeline scripts into the image (scoring + inference + LD reference).
 COPY scripts/ /scripts/
+COPY tests/ /tests/
 RUN chmod a+x /scripts/*.R
 
 WORKDIR /scripts
