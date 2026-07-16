@@ -1,0 +1,32 @@
+# Cloud Build config for the ldpred2 / bigsnpr scoring image.
+#
+# Build + push with Cloud Build (no local docker required). Run from the repo root:
+#
+#   gcloud builds submit . \
+#     --config docker/cloudbuild.yaml \
+#     --substitutions=_TAG=0.1,_IMAGE=REGION-docker.pkg.dev/PROJECT/REGISTRY/ldpred2 \
+#     --project YOUR_GCP_PROJECT \
+#     --region YOUR_REGION \
+#     --gcs-source-staging-dir gs://YOUR_STAGING_BUCKET/cloud_build_staging
+#
+# NOTE on --gcs-source-staging-dir: if your GCP org enforces a resource-location
+# policy (constraints/gcp.resourceLocations), the default Cloud Build staging
+# bucket (US multi-region) is rejected with:
+#     HTTPError 412: 'us' violates constraint 'constraints/gcp.resourceLocations'
+# Point --gcs-source-staging-dir at a bucket in an allowed region to fix it
+# (--region sets only the build worker, not the staging bucket).
+substitutions:
+  _TAG: "0.1"
+  _IMAGE: "REGION-docker.pkg.dev/PROJECT/REGISTRY/ldpred2"
+
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["build", "-f", "docker/Dockerfile", "-t", "${_IMAGE}:${_TAG}", "."]
+
+images:
+  - "${_IMAGE}:${_TAG}"
+
+# bigsnpr + its C++ deps take a while to compile.
+timeout: "3600s"
+options:
+  machineType: "E2_HIGHCPU_8"

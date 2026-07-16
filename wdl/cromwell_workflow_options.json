@@ -1,0 +1,7 @@
+{
+  "google_labels": {
+    "product": "YOUR_PRODUCT_LABEL"
+  },
+  "read_from_cache": true,
+  "write_to_cache": true
+}

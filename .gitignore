@@ -1,0 +1,22 @@
+# Logs and Cromwell/Cloud Build run artifacts
+logs/
+*.log
+
+# R session / bigstatsr backing files
+.Rhistory
+.RData
+.Rproj.user/
+*.rds
+*.bk
+*_backingfile*
+
+# OS / editor cruft
+.DS_Store
+*~
+
+# Local, deployment-specific, or scratch helpers (not part of the published tool)
+.gcloudignore
+build_image.sh
+PHASE_A_IMPLEMENTATION.md
+scratch/
+tmp/

@@ -1,0 +1,48 @@
+{
+    "ldpred2_score.docker": "REGION-docker.pkg.dev/PROJECT/REGISTRY/ldpred2:0.1",
+
+    "ldpred2_score.bgen_chunk_list": "gs://YOUR_BUCKET/bgen/bgen_chunks.txt",
+
+    "ldpred2_score.score_files": [
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/ALT.LMMall_Intercept.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/ALT.LMMall_Slope.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/ALT.LMMall_Resid.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/ALT.LMMall_meanLabVal.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/HbA1c.LMMall_Intercept.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/HbA1c.LMMall_Slope.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/HbA1c.LMMall_Resid.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/HbA1c.LMMall_meanLabVal.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/LDL.LMMall_Intercept.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/LDL.LMMall_Slope.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/LDL.LMMall_Resid.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/LDL.LMMall_meanLabVal.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/RDW.LMMall_Intercept.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/RDW.LMMall_Slope.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/RDW.LMMall_Resid.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/RDW.LMMall_meanLabVal.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/TSH.LMMall_Intercept.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/TSH.LMMall_Slope.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/TSH.LMMall_Resid.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/TSH.LMMall_meanLabVal.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/creatinine.LMMall_Intercept.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/creatinine.LMMall_Slope.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/creatinine.LMMall_Resid.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/creatinine.LMMall_meanLabVal.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/HbA1c.LMMpremed_Intercept.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/HbA1c.LMMpremed_Slope.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/HbA1c.LMMpremed_Resid.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/HbA1c.LMMpremed_meanLabVal.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/LDL.LMMpremed_Intercept.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/LDL.LMMpremed_Slope.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/LDL.LMMpremed_Resid.score.tsv",
+        "gs://YOUR_BUCKET/pgs_weights/harmonised/LDL.LMMpremed_meanLabVal.score.tsv"
+    ],
+
+    "ldpred2_score.score_chunk.cpu": 2,
+    "ldpred2_score.score_chunk.mem": "13 GB",
+    "ldpred2_score.score_chunk.preemptible": 2,
+
+    "ldpred2_score.gather_scores.cpu": 1,
+    "ldpred2_score.gather_scores.mem": "8 GB",
+    "ldpred2_score.gather_scores.preemptible": 0
+}

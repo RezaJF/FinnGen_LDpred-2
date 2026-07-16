@@ -1,0 +1,22 @@
+# Dependencies for the ldpred2_score pipeline.
+#
+# These are installed inside the Docker image (docker/Dockerfile) and are listed
+# here for reference — the workflow itself runs entirely in-container, so nothing
+# needs to be installed on the submitting host beyond a WDL runner / Cromwell.
+#
+# R (>= 4.3), from a pinned CRAN snapshot:
+bigsnpr      # PGS scoring engine: snp_readBGEN, snp_match, big_prodVec (pulls bigstatsr)
+bigreadr
+data.table
+RSQLite      # reads the .bgen .bgi (SQLite) variant index
+dbplyr       # required at runtime by bigsnpr::snp_readBGEN
+optparse
+#
+# System tools in the image:
+#   - gzip            (partial-score compression; the image's data.table is
+#                      built without zlib, so gzip is done via the gzip binary)
+#   - build-essential, gfortran, zlib/lzma/bz2 dev headers (to compile bigsnpr)
+#
+# Host-side (not in the image), to build + submit:
+#   - Google Cloud SDK (gcloud, gsutil) for Cloud Build + GCS
+#   - a WDL runner (Cromwell); CromwellInteract is one convenient submitter
