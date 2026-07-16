@@ -1,0 +1,32 @@
+{
+    "ldpred2_pipeline.docker": "REGION-docker.pkg.dev/PROJECT/REGISTRY/ldpred2:0.1",
+
+    "ldpred2_pipeline.sumstats_files": [
+        "gs://YOUR_BUCKET/sumstats/traitA.sumstats.tsv.gz",
+        "gs://YOUR_BUCKET/sumstats/traitB.sumstats.tsv.gz"
+    ],
+
+    "_comment_ld": "LD reference: in-sample (ld_bgen_by_chr + variants) OR precomputed_ld_parts.",
+    "ldpred2_pipeline.ld_bgen_by_chr": [
+        "gs://YOUR_BUCKET/bgen/by_chr/finngen_chr1.bgen",
+        "gs://YOUR_BUCKET/bgen/by_chr/finngen_chr22.bgen"
+    ],
+    "ldpred2_pipeline.variants": "gs://YOUR_BUCKET/reference/hapmap3plus.chr_pos_a0_a1.tsv",
+    "ldpred2_pipeline.n_ld": 10000,
+    "_ldpred2_pipeline.precomputed_ld_parts": ["gs://YOUR_BUCKET/ld/ld_reference.rds"],
+
+    "_comment_score": "Scoring: the bgen chunk list to score the inferred weights against.",
+    "ldpred2_pipeline.bgen_chunk_list": "gs://YOUR_BUCKET/bgen/bgen_chunks.txt",
+
+    "_comment_cols": "sumstats column mapping is on the nested infer task:",
+    "ldpred2_pipeline.infer_step.infer.a1_col": "a1",
+    "ldpred2_pipeline.infer_step.infer.a0_col": "a0",
+    "ldpred2_pipeline.infer_step.infer.beta_col": "beta",
+    "ldpred2_pipeline.infer_step.infer.se_col": "beta_se",
+    "ldpred2_pipeline.infer_step.infer.n_col": "n_eff",
+    "_ldpred2_pipeline.infer_step.infer.freq_col": "af",
+
+    "ldpred2_pipeline.score_step.score_chunk.cpu": 2,
+    "ldpred2_pipeline.score_step.score_chunk.mem": "13 GB",
+    "ldpred2_pipeline.score_step.gather_scores.mem": "8 GB"
+}

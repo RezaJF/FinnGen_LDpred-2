@@ -1,22 +1,83 @@
-# FinnGen_LDpred-2 — `ldpred2_score`
+# FinnGen_LDpred-2
 
-A WDL pipeline that computes **per-individual polygenic scores (PGS)** by applying
-**precomputed per-SNP weights** to imputed `bgen` genotypes, using the
-[**bigsnpr**](https://privefl.github.io/bigsnpr/) / LDpred2 toolchain purely as a
-**scoring engine**.
+An end-to-end **LDpred2** pipeline (WDL + [**bigsnpr**](https://privefl.github.io/bigsnpr/)): from GWAS
+summary statistics to **per-individual polygenic scores (PGS)** on imputed `bgen` genotypes.
 
-> **Scope — this is score-only.** The pipeline does **not** run LDpred2 inference and uses **no LD
-> reference matrix**. It assumes the weights (betas) are already inferred (e.g. by LDpred2-auto, LDAK
-> MegaPRS, PRS-CS, …) and simply evaluates the genotype × weight dot product
-> `PGS_i = Σ_j dosage_ij · β_j` for every individual, distributed over `bgen` chunks.
+Two stages, each a standalone WDL, plus a top-level workflow that runs them together:
 
-It was built to score a set of partitioned longitudinal-lab weight files (LDAK MegaPRS `Intercept /
-Slope / Resid / meanLabVal` components) against FinnGen R13 imputed genotypes, but it is generic: any
-set of harmonised weight files and any chunked `bgen` release will work.
+| Stage | Workflow | Does |
+|---|---|---|
+| **Infer** | `wdl/ldpred2_infer.wdl` | GWAS sumstats + LD reference → LDpred2-auto posterior weights (per-SNP β) |
+| **Score** | `wdl/ldpred2_score.wdl` | weights + `bgen` → per-individual PGS (`Σ_j dosage_ij · β_j`) |
+| **End-to-end** | `wdl/ldpred2_pipeline.wdl` | sumstats → weights → PGS in one submission |
+
+```mermaid
+flowchart LR
+    SS["GWAS summary statistics<br/>(per trait)"] --> INF
+    subgraph LDref ["LD reference"]
+        direction TB
+        LDa["in-sample: build_ld_reference.R<br/>(snp_cor over cohort bgen)"]
+        LDb["or precomputed parts"]
+    end
+    LDref --> INF["ldpred2_infer<br/>snp_ldsc h2 → snp_ldpred2_auto"]
+    INF --> W["harmonised weights<br/>bgen_id·chr·pos·a1_effect·a0·weight"]
+    W --> SC["ldpred2_score<br/>scatter-gather over bgen chunks"]
+    G["target cohort bgen"] --> SC
+    SC --> PGS["per-individual PGS<br/>.sscore"]
+```
+
+The scoring stage is also useful on its own for any externally-inferred weights (LDpred2, LDAK
+MegaPRS, PRS-CS, …). Both stages run from a single Docker image and are generic across chunked `bgen`
+releases (built for FinnGen R13).
 
 ---
 
-## How it works
+## Stage 1 — Inference (LDpred2-auto)
+
+`ldpred2_infer.wdl` turns GWAS summary statistics into posterior per-SNP weights with
+`bigsnpr::snp_ldpred2_auto` — the parameter-free "auto" model (no validation set needed). Per trait:
+match sumstats to the LD reference, optional SD-based QC, estimate h² by LD-score regression
+(`snp_ldsc`), run a multi-chain `snp_ldpred2_auto`, drop diverged chains, and average the kept chains'
+effects into the final weights.
+
+```mermaid
+flowchart TD
+    SS["sumstats (chr,pos,a1,a0,beta,beta_se,n_eff[,freq,info])"] --> M
+    LD["LD reference parts<br/>(corr + map + LD scores, per chr)"] --> M["snp_match + subset<br/>assemble SFBM aligned to betas"]
+    M --> QC["sd-based QC (if freq given)"]
+    QC --> H["snp_ldsc → h² init"]
+    H --> A["snp_ldpred2_auto<br/>(30 chains, multi p_init)"]
+    A --> F["filter diverged chains → average β"]
+    F --> W["weights.tsv<br/>bgen_id·chr·pos·a1_effect·a0·weight"]
+```
+
+### LD reference — two options
+
+The LD reference is one or more **per-chromosome parts**, each an `.rds` holding
+`list(corr = <sparse correlation>, map = data.frame(chr,pos,a0,a1), ld = <LD scores>)`. Parts store
+plain sparse matrices (portable); the on-disk SFBM that LDpred2 needs is rebuilt inside the inference
+task, so nothing with an absolute backing path crosses machines.
+
+- **In-sample (default, recommended for a specific cohort):** the workflow scatters over the cohort's
+  per-chromosome `bgen`s and runs `build_ld_reference.R` (`snp_cor` on a subsample of ~`n_ld`
+  individuals, restricted to a supplied variant list, e.g. HapMap3+). Most accurate for the target
+  ancestry (e.g. Finnish) and matches the scoring genotypes.
+- **Precomputed:** pass `precomputed_ld_parts` (per-chr parts, or a one-file bundle from
+  `combine_ld_reference.R` as a single-element array) and the build is skipped. Quicker/portable; use
+  a reference matched to your ancestry.
+
+### Inference inputs / outputs
+
+Configure [`wdl/ldpred2_infer.inputs.json`](wdl/ldpred2_infer.inputs.json): `sumstats_files` (one per
+trait), the LD-reference inputs, and the sumstats **column mapping** (`*_col` on the `infer` task;
+defaults `chr,pos,a1,a0,beta,beta_se,n_eff`, with `a1` = effect allele; optional `freq_col` enables
+SD-QC, `info_col` enables an INFO filter). Provide `n_eff` per variant (`n_col`) or a constant. Output:
+one **`<trait>.weights.tsv`** (harmonised, feeds scoring) and a **`<trait>.report.tsv`** (h², p, chains
+kept) per trait.
+
+---
+
+## Stage 2 — Scoring: how it works
 
 For each `bgen` chunk (a scatter shard), `score_chunk` reads only the variants that overlap the
 weight files, aligns alleles, computes a **partial** PGS per weight file, and writes one gzipped
@@ -106,14 +167,21 @@ outside this repo.
 ```
 FinnGen_LDpred-2/
 ├── wdl/
-│   ├── ldpred2_score.wdl                # workflow: scatter score_chunk → gather_scores
-│   ├── ldpred2_score.inputs.json        # inputs template (fill in your buckets/image)
+│   ├── ldpred2_pipeline.wdl             # end-to-end: infer → score (imports the two below)
+│   ├── ldpred2_infer.wdl                # inference: (build LD) → LDpred2-auto weights
+│   ├── ldpred2_score.wdl               # scoring: scatter score_chunk → gather_scores
+│   ├── ldpred2_pipeline.inputs.json     # inputs templates …
+│   ├── ldpred2_infer.inputs.json
+│   ├── ldpred2_score.inputs.json
 │   └── cromwell_workflow_options.json   # labels + call-caching
 ├── scripts/
+│   ├── build_ld_reference.R             # in-sample LD (snp_cor) for one chromosome
+│   ├── combine_ld_reference.R           # (optional) bundle per-chr LD parts into one file
+│   ├── ldpred2_infer.R                  # snp_ldsc h2 + snp_ldpred2_auto → weights
 │   ├── score_chunk.R                    # per-chunk bigsnpr scoring
 │   └── gather_scores.R                  # sum partials → final .sscore
 ├── docker/
-│   ├── Dockerfile                       # R + bigsnpr + deps
+│   ├── Dockerfile                       # R + bigsnpr + deps (one image for all stages)
 │   └── cloudbuild.yaml                  # Cloud Build config
 ├── submit_ldpred2_score.sh              # example Cromwell submission helper
 ├── requirements.txt
@@ -142,21 +210,32 @@ gcloud builds submit . \
 
 ### 2. Configure inputs
 
-Set the image tag, `bgen_chunk_list`, and `score_files` in `wdl/ldpred2_score.inputs.json`, and your
-labels in `wdl/cromwell_workflow_options.json`.
+Fill the relevant inputs template (image tag, buckets, columns) and your labels in
+`wdl/cromwell_workflow_options.json`.
 
 ### 3. Submit
 
+The image is shared by all stages. Run whichever entry point you need:
+
 ```bash
-./submit_ldpred2_score.sh          # thin wrapper around a Cromwell submit
+# End-to-end: sumstats → weights → PGS (imports the two sub-workflows, so zip them as deps)
+( cd wdl && zip ldpred2_deps.zip ldpred2_infer.wdl ldpred2_score.wdl )
+cromwell --port 5000 submit --wdl wdl/ldpred2_pipeline.wdl \
+  --inputs wdl/ldpred2_pipeline.inputs.json --deps wdl/ldpred2_deps.zip \
+  --options wdl/cromwell_workflow_options.json
+
+# Or a single stage on its own (no --deps needed):
+cromwell --port 5000 submit --wdl wdl/ldpred2_infer.wdl --inputs wdl/ldpred2_infer.inputs.json
+./submit_ldpred2_score.sh          # thin wrapper for the scoring stage
 ```
 
-Adapt the wrapper to your Cromwell submitter (Cromshell, REST API, Terra, or
+Adapt to your Cromwell submitter (Cromshell, REST API, Terra, or
 [CromwellInteract](https://github.com/FINNGEN/CromwellInteract)).
 
 ### 4. Collect outputs
 
-Retrieve the `.sscore` files from your Cromwell execution bucket once the workflow succeeds.
+Retrieve the per-trait `weights.tsv` / `report.tsv` and the per-individual `.sscore` files from your
+Cromwell execution bucket once the workflow succeeds.
 
 ---
 

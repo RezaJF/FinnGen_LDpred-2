@@ -1,0 +1,38 @@
+{
+    "ldpred2_infer.docker": "REGION-docker.pkg.dev/PROJECT/REGISTRY/ldpred2:0.1",
+
+    "ldpred2_infer.sumstats_files": [
+        "gs://YOUR_BUCKET/sumstats/traitA.sumstats.tsv.gz",
+        "gs://YOUR_BUCKET/sumstats/traitB.sumstats.tsv.gz"
+    ],
+
+    "_comment_ld": "LD reference: EITHER build in-sample (ld_bgen_by_chr + variants) OR pass precomputed_ld_parts (per-chr .rds parts, or a one-file bundle as a 1-element array). Provide only one.",
+    "ldpred2_infer.ld_bgen_by_chr": [
+        "gs://YOUR_BUCKET/bgen/by_chr/finngen_chr1.bgen",
+        "gs://YOUR_BUCKET/bgen/by_chr/finngen_chr2.bgen",
+        "gs://YOUR_BUCKET/bgen/by_chr/finngen_chr22.bgen"
+    ],
+    "ldpred2_infer.variants": "gs://YOUR_BUCKET/reference/hapmap3plus.chr_pos_a0_a1.tsv",
+    "ldpred2_infer.n_ld": 10000,
+
+    "_comment_precomputed": "Alternative to the two lines above:",
+    "_ldpred2_infer.precomputed_ld_parts": ["gs://YOUR_BUCKET/ld/ld_reference.rds"],
+
+    "_comment_cols": "Map your sumstats columns (defaults: chr,pos,a1,a0,beta,beta_se,n_eff). a1 = effect allele.",
+    "ldpred2_infer.infer.chr_col": "chr",
+    "ldpred2_infer.infer.pos_col": "pos",
+    "ldpred2_infer.infer.a1_col": "a1",
+    "ldpred2_infer.infer.a0_col": "a0",
+    "ldpred2_infer.infer.beta_col": "beta",
+    "ldpred2_infer.infer.se_col": "beta_se",
+    "ldpred2_infer.infer.n_col": "n_eff",
+    "_ldpred2_infer.infer.freq_col": "af",
+    "_ldpred2_infer.infer.info_col": "info",
+    "ldpred2_infer.infer.n_chains": 30,
+    "ldpred2_infer.infer.cpu": 8,
+    "ldpred2_infer.infer.mem": "32 GB",
+
+    "ldpred2_infer.build_ld_chr.window_kb": 3000,
+    "ldpred2_infer.build_ld_chr.cpu": 4,
+    "ldpred2_infer.build_ld_chr.mem": "32 GB"
+}

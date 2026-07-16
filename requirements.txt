@@ -5,9 +5,12 @@
 # needs to be installed on the submitting host beyond a WDL runner / Cromwell.
 #
 # R (>= 4.3), from a pinned CRAN snapshot:
-bigsnpr      # PGS scoring engine: snp_readBGEN, snp_match, big_prodVec (pulls bigstatsr)
+bigsnpr      # scoring: snp_readBGEN, snp_match, big_prodVec;
+             # inference: snp_ldsc, snp_ldpred2_auto, snp_cor (pulls bigstatsr, bigsparser)
+bigsparser   # sparse LD correlation as an on-disk SFBM (LDpred2)
 bigreadr
 data.table
+Matrix       # sparse LD matrices (build/combine LD reference)
 RSQLite      # reads the .bgen .bgi (SQLite) variant index
 dbplyr       # required at runtime by bigsnpr::snp_readBGEN
 optparse

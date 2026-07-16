@@ -43,19 +43,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # installing bigsnpr alone does NOT pull them). Without them snp_readBGEN
 # aborts with "Please install package 'dbplyr'". Install explicitly.
 RUN R -e "options(repos = c(CRAN = 'https://packagemanager.posit.co/cran/2024-01-15')); \
-          install.packages(c('optparse','data.table','bigreadr','RSQLite','Rcpp','RcppEigen','dplyr','dbplyr'), Ncpus = 4); \
+          install.packages(c('optparse','data.table','bigreadr','RSQLite','Rcpp','RcppEigen','dplyr','dbplyr','Matrix'), Ncpus = 4); \
           install.packages('bigsnpr', Ncpus = 4); \
           stopifnot(requireNamespace('bigsnpr', quietly = TRUE), \
                     requireNamespace('bigstatsr', quietly = TRUE), \
+                    requireNamespace('bigsparser', quietly = TRUE), \
                     requireNamespace('data.table', quietly = TRUE), \
                     requireNamespace('RSQLite', quietly = TRUE), \
                     requireNamespace('dplyr', quietly = TRUE), \
                     requireNamespace('dbplyr', quietly = TRUE), \
+                    requireNamespace('Matrix', quietly = TRUE), \
                     requireNamespace('optparse', quietly = TRUE))"
 
-# Bake the scoring scripts into the image (same approach as regenie-pipelines).
-COPY scripts/score_chunk.R  /scripts/score_chunk.R
-COPY scripts/gather_scores.R /scripts/gather_scores.R
+# Bake all pipeline scripts into the image (scoring + inference + LD reference).
+COPY scripts/ /scripts/
 RUN chmod a+x /scripts/*.R
 
 WORKDIR /scripts
