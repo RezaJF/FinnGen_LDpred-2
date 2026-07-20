@@ -93,9 +93,6 @@ task gather_scores {
 
     # All partial-score files from all chunks, flattened.
     Array[File] partials
-    # Manifest of the partial paths (one per line); passed to the R script so we
-    # avoid a giant command line for 535 chunks x 32 weight files.
-    File partial_manifest = write_lines(partials)
 
     String docker
     Int cpu = 1
@@ -111,8 +108,20 @@ task gather_scores {
 
         mkdir -p sscore
 
+        # Build the manifest from the LOCALIZED partial paths. A WDL-level
+        # write_lines of the partials array emits gs:// URIs on the GCP Batch
+        # backend, which gather_scores.R cannot file.exists() -> "no partial-score
+        # files found" (the files are actually localized under
+        # /mnt/disks/cromwell_root/...). Expanding the partials array inside the
+        # command substitutes the localized container paths instead. Disable
+        # xtrace around the expansion (17120 paths).
+        { set +x; } 2>/dev/null
+        printf '%s\n' ${sep=" " partials} > partial_manifest.txt
+        set -x
+        echo "manifest lines: $(wc -l < partial_manifest.txt)"
+
         Rscript /scripts/gather_scores.R \
-            --partials ${partial_manifest} \
+            --partials partial_manifest.txt \
             --out_dir sscore
 
         echo "final sscore files:"
